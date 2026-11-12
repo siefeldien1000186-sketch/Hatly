@@ -1,0 +1,41 @@
+{
+  "name": "Hatly Super App - هاتلي مصر",
+  "short_name": "هاتلي",
+  "description": "كل خدمات التوصيل في مكان واحد - اطلب هاتلي، هيجيلك وقتي",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#151515",
+  "theme_color": "#FF6B00",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "/hatly-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/hatly-app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "food", "travel"],
+  "shortcuts": [
+    {
+      "name": "هاتلي فود",
+      "short_name": "مطاعم",
+      "url": "/?service=food",
+      "icons": [{ "src": "/hatly-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "هاتلي إكسبريس",
+      "short_name": "طرود",
+      "url": "/?service=express",
+      "icons": [{ "src": "/hatly-icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

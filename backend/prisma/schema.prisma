@@ -1,0 +1,318 @@
+// Hatly (هاتلي) - Super App Relational Database Schema
+// Fully production-ready schema supporting Ride-Hailing, Food, Express, Grocery, and Shopping
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String    @id @default(uuid())
+  name                  String
+  phone                 String    @unique
+  email                 String?   @unique
+  passwordHash          String
+  role                  String    @default("CUSTOMER") // CUSTOMER, DRIVER, STORE_OWNER, ADMIN
+  avatar                String?
+  language              String    @default("ar")
+  isBlocked             Boolean   @default(false)
+  isEmailVerified       Boolean   @default(true)
+  isPhoneVerified       Boolean   @default(true)
+  resetPasswordToken    String?
+  resetPasswordExpires  DateTime?
+  walletBalance         Float     @default(0.0)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  driverProfile Driver?
+  storeProfile  Store?
+  orders        Order[]   @relation("CustomerOrders")
+  transactions  WalletTransaction[]
+  tickets       SupportTicket[]
+  notifications Notification[]
+  reviewsWritten Review[] @relation("ReviewsGiven")
+}
+
+model Driver {
+  id                  String             @id @default(uuid())
+  userId              String             @unique
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleType         String             @default("CAR") // CAR, SCOOTER, VAN
+  vehicleModel        String
+  vehiclePlate        String             @unique
+  vehicleYear         Int
+  vehicleColor        String
+  licenseNumber       String             @unique
+  nationalId          String             @unique
+  verificationStatus  String             @default("PENDING") // PENDING, APPROVED, REJECTED
+  rejectionReason     String?
+  dateOfBirth         String?
+  isOnline            Boolean            @default(false)
+  currentLat          Float?
+  currentLng          Float?
+  lastLocationUpdate  DateTime?
+  rating              Float              @default(5.0)
+  totalTrips          Int                @default(0)
+  totalEarnings       Float              @default(0.0)
+  commissionOwed      Float              @default(0.0)
+  
+  // Documents
+  profilePhotoDoc     String?
+  nationalIdFrontDoc  String?
+  nationalIdBackDoc   String?
+  drivingLicenseDoc   String?
+  vehicleRegDoc       String?
+  criminalRecordDoc   String?
+
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  // Relations
+  orders              Order[]            @relation("DriverOrders")
+}
+
+model Store {
+  id              String      @id @default(uuid())
+  ownerId         String      @unique
+  owner           User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  businessRole    String      @default("RESTAURANT") // RESTAURANT or BUSINESS_OWNER
+  type            String      @default("RESTAURANT") // RESTAURANT, SUPERMARKET, PHARMACY, SHOP
+  nameAr          String
+  nameEn          String
+  descriptionAr   String?
+  descriptionEn   String?
+  ownerName       String?
+  logo            String?
+  coverImage      String?
+  address         String
+  latitude        Float
+  longitude       Float
+  phone           String
+  rating          Float       @default(4.8)
+  deliveryTimeMin Int         @default(30)
+  deliveryFee     Float       @default(15.0)
+  minimumOrder    Float       @default(50.0)
+  isOpen          Boolean     @default(true)
+  commissionRate  Float       @default(15.0) // %
+  verificationStatus String   @default("APPROVED") // PENDING, APPROVED, REJECTED
+  rejectionReason String?
+  workingHours    String?
+  
+  // Verification Documents
+  commercialRegDoc String?
+  taxCardDoc      String?
+  permitDoc       String?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  categories      Category[]
+  products        Product[]
+  orders          Order[]     @relation("StoreOrders")
+}
+
+model ServiceZone {
+  id              String   @id @default(uuid())
+  zoneKey         String   @unique // 'alexandria_central', 'el_king_mariout', 'borg_el_arab'
+  nameAr          String
+  nameEn          String
+  centerLat       Float
+  centerLng       Float
+  radiusKm        Float
+  isActive        Boolean  @default(true)
+  baseDeliveryFee Float    @default(15.0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  storeId   String
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  nameAr    String
+  nameEn    String
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products  Product[]
+}
+
+model Product {
+  id            String    @id @default(uuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId    String
+  category      Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  nameAr        String
+  nameEn        String
+  descriptionAr String?
+  descriptionEn String?
+  price         Float
+  originalPrice Float?
+  image         String?
+  isAvailable   Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  orderItems    OrderItem[]
+}
+
+model PricingRule {
+  id                      String       @id @default(uuid())
+  serviceType             String       @unique // RIDE, FOOD, EXPRESS, MARKET, SHOPPING
+  rideSubtype             String?      // ECONOMY, COMFORT, SCOOTER, VAN
+  nameAr                  String
+  nameEn                  String
+  baseFare                Float        // EGP
+  perKmRate               Float        // EGP per KM
+  perMinuteRate           Float        // EGP per Minute
+  minimumFare             Float        // EGP
+  serviceFee              Float        @default(5.0) // Platform fee
+  surgeMultiplier         Float        @default(1.0) // 1.0 = Normal, 1.5 = Surge
+  driverCommissionPercent Float        @default(15.0) // %
+  isActive                Boolean      @default(true)
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+}
+
+model Order {
+  id                String         @id @default(uuid())
+  orderNumber       String         @unique
+  customerId        String
+  customer          User           @relation("CustomerOrders", fields: [customerId], references: [id])
+  driverId          String?
+  driver            Driver?        @relation("DriverOrders", fields: [driverId], references: [id])
+  storeId           String?
+  store             Store?         @relation("StoreOrders", fields: [storeId], references: [id])
+  
+  serviceType       String         // RIDE, FOOD, EXPRESS, MARKET, SHOPPING
+  rideSubtype       String?        // ECONOMY, COMFORT, SCOOTER, VAN
+  status            String         @default("PENDING_DRIVER") 
+  // PENDING_DRIVER, STORE_PENDING, STORE_PREPARING, STORE_READY, DRIVER_ASSIGNED, DRIVER_ARRIVED, IN_PROGRESS, COMPLETED, CANCELLED
+  
+  // Addresses and Coordinates
+  pickupAddress     String
+  pickupLat         Float
+  pickupLng         Float
+  dropoffAddress    String
+  dropoffLat        Float
+  dropoffLng        Float
+  
+  distanceKm        Float          @default(0.0)
+  durationMinutes   Int            @default(0)
+
+  // Express package details (optional)
+  packageRecipient  String?
+  packagePhone      String?
+  packageNote       String?
+
+  // Financial breakdown (EGP)
+  subtotal          Float          @default(0.0)
+  deliveryFee       Float          @default(0.0)
+  serviceFee        Float          @default(5.0)
+  tax               Float          @default(0.0)
+  discount          Float          @default(0.0)
+  totalAmount       Float          @default(0.0)
+  driverEarnings    Float          @default(0.0)
+  platformFee       Float          @default(0.0)
+  
+  paymentMethod     String         @default("CASH") // CASH, CARD, WALLET
+  paymentStatus     String         @default("PENDING") // PENDING, PAID, REFUNDED
+  promoCodeApplied  String?
+  
+  customerNotes     String?
+  cancellationReason String?
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Relations
+  items             OrderItem[]
+  reviews           Review[]
+  supportTickets    SupportTicket[]
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  nameAr      String
+  nameEn      String
+  price       Float
+  quantity    Int      @default(1)
+  options     String?  // JSON string for add-ons/variations
+}
+
+model WalletTransaction {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      Float
+  type        String          // CREDIT, DEBIT
+  reason      String          // TRIP_PAYMENT, REFUND, EARNING, WITHDRAWAL, PROMO
+  referenceId String?         // Order ID or withdrawal ID
+  createdAt   DateTime        @default(now())
+}
+
+model PromoCode {
+  id              String    @id @default(uuid())
+  code            String    @unique
+  discountPercent Float     // e.g. 20 for 20%
+  maxDiscount     Float     // e.g. 50 EGP
+  minOrderAmount  Float     // e.g. 100 EGP
+  expiryDate      DateTime
+  usageLimit      Int       @default(1000)
+  usedCount       Int       @default(0)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+}
+
+model Review {
+  id          String    @id @default(uuid())
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reviewerId  String
+  reviewer    User      @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  targetType  String    // DRIVER, STORE, CUSTOMER
+  targetId    String
+  rating      Int       // 1 - 5
+  comment     String?
+  createdAt   DateTime  @default(now())
+}
+
+model SupportTicket {
+  id            String       @id @default(uuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId       String?
+  order         Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  subject       String
+  message       String
+  status        String       @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  adminResponse String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  titleAr   String
+  titleEn   String
+  bodyAr    String
+  bodyEn    String
+  isRead    Boolean  @default(false)
+  type      String   @default("GENERAL") // ORDER, PROMO, SYSTEM
+  link      String?
+  createdAt DateTime @default(now())
+}
