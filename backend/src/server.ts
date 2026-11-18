@@ -11,6 +11,9 @@ import { autoSeedIfEmpty } from './seed';
 const app = express();
 const server = http.createServer(app);
 
+// Trust Railway's reverse proxy for real IP detection (rate limiting)
+app.set('trust proxy', 1);
+
 // Initialize WebSockets
 const io = initSocket(server);
 
