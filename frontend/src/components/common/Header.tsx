@@ -141,7 +141,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenWalletModal }) => {
               <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
             </button>
 
-            {/* Quick Demo Switcher Dropdown */}
+            {/* Role Menu Dropdown */}
             {showRoleMenu && (
               <div className="absolute left-0 rtl:left-auto rtl:right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95">
                 <div className="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
