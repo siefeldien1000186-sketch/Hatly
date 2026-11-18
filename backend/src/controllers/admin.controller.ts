@@ -135,11 +135,38 @@ export const verifyDriverAdminController = async (req: AuthRequest, res: Respons
 
 export const getAllUsersAdminController = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const { role, search } = req.query;
+
     const users = await prisma.user.findMany({
-      include: {
+      where: {
+        ...(role ? { role: String(role) } : {}),
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: String(search) } },
+                { phone: { contains: String(search) } },
+                { email: { contains: String(search) } },
+              ],
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        role: true,
+        avatar: true,
+        language: true,
+        isBlocked: true,
+        isEmailVerified: true,
+        isPhoneVerified: true,
+        walletBalance: true,
+        createdAt: true,
+        updatedAt: true,
         driverProfile: true,
         storeProfile: true,
-        _count: { select: { orders: true } },
+        _count: { select: { orders: true, transactions: true, reviewsWritten: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -406,6 +433,106 @@ export const reviewApplicationAdminController = async (req: AuthRequest, res: Re
 
       res.json({ success: true, message: `تم تحديث حالة الشريك التجاري إلى ${status} بنجاح`, data: store });
     }
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// --- ADDITIONAL FULL ADMIN OPERATIONS ---
+
+export const updateOrderStatusAdminController = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { status, cancellationReason } = req.body;
+
+    const updated = await prisma.order.update({
+      where: { id },
+      data: {
+        status,
+        ...(cancellationReason ? { cancellationReason } : {}),
+      },
+    });
+
+    res.json({ success: true, message: `تم تحديث حالة الطلب إلى ${status}`, order: updated });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const deletePromoCodeAdminController = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    await prisma.promoCode.delete({ where: { id } });
+    res.json({ success: true, message: 'تم حذف كود الخصم بنجاح' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getAllStoresAdminController = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const stores = await prisma.store.findMany({
+      include: {
+        owner: { select: { name: true, phone: true, email: true } },
+        _count: { select: { products: true, orders: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ success: true, stores });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const toggleStoreStatusAdminController = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const store = await prisma.store.findUnique({ where: { id } });
+    if (!store) {
+      res.status(404).json({ success: false, message: 'Store not found' });
+      return;
+    }
+    const updated = await prisma.store.update({
+      where: { id },
+      data: { isOpen: !store.isOpen },
+    });
+    res.json({
+      success: true,
+      message: updated.isOpen ? 'المتجر متاح لاستقبال الطلبات' : 'تم إغلاق المتجر مؤقتاً',
+      store: updated,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getAllSupportTicketsAdminController = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const tickets = await prisma.supportTicket.findMany({
+      include: {
+        user: { select: { name: true, phone: true, email: true } },
+        order: { select: { orderNumber: true, serviceType: true, totalAmount: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json({ success: true, tickets });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const resolveSupportTicketAdminController = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { status, adminNotes } = req.body;
+    const updated = await prisma.supportTicket.update({
+      where: { id },
+      data: {
+        status: status || 'RESOLVED',
+        ...(adminNotes ? { adminNotes } : {}),
+      },
+    });
+    res.json({ success: true, message: 'تم تحديث تذكرة الدعم بنجاح', ticket: updated });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

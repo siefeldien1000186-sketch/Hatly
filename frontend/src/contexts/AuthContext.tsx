@@ -12,7 +12,6 @@ interface AuthContextType {
   register: (payload: any) => Promise<any>;
   forgotPassword: (identifier: string) => Promise<any>;
   resetPassword: (payload: any) => Promise<any>;
-  quickLogin: (role: Role) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -89,40 +88,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return await api.resetPassword(payload);
   };
 
-  const quickLogin = async (role: Role) => {
-    setIsLoading(true);
-    try {
-      let phone = '01011112222';
-      let pass = 'hatly123';
-
-      if (role === 'CUSTOMER') {
-        phone = '01011112222';
-        pass = 'hatly123';
-      } else if (role === 'DRIVER') {
-        phone = '01022223333';
-        pass = 'hatly123';
-      } else if (role === 'STORE_OWNER') {
-        phone = '01055556666';
-        pass = 'hatly123';
-      } else if (role === 'ADMIN') {
-        phone = '01000000001';
-        pass = 'admin123';
-      }
-
-      const res = await api.login(phone, pass);
-      if (res.success && res.token && res.user) {
-        setAuthToken(res.token);
-        setToken(res.token);
-        setUser(res.user);
-        setActiveRole(role);
-      }
-    } catch (err: any) {
-      console.error('Quick login error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const logout = () => {
     removeAuthToken();
     setToken(null);
@@ -153,7 +118,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         forgotPassword,
         resetPassword,
-        quickLogin,
         logout,
         refreshUser,
       }}

@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 
 export const WelcomeAuthScreen: React.FC = () => {
-  const { login, register, forgotPassword, resetPassword, quickLogin } = useAuth();
+  const { login, register, forgotPassword, resetPassword } = useAuth();
   const { language, toggleLanguage } = useLanguage();
 
   // Screen View States: 'WELCOME' | 'LOGIN' | 'ROLE_SELECT' | 'REGISTER_CUSTOMER' | 'REGISTER_CAPTAIN' | 'REGISTER_RESTAURANT' | 'REGISTER_BUSINESS' | 'FORGOT'

@@ -50,6 +50,12 @@ import {
   toggleServiceZoneAdminController,
   getPendingApplicationsAdminController,
   reviewApplicationAdminController,
+  updateOrderStatusAdminController,
+  deletePromoCodeAdminController,
+  getAllStoresAdminController,
+  toggleStoreStatusAdminController,
+  getAllSupportTicketsAdminController,
+  resolveSupportTicketAdminController,
 } from '../controllers/admin.controller';
 import {
   getWalletController,
@@ -118,5 +124,11 @@ router.get('/admin/zones', authenticate, authorize('ADMIN'), getServiceZonesAdmi
 router.post('/admin/zones/:id/toggle', authenticate, authorize('ADMIN'), toggleServiceZoneAdminController);
 router.get('/admin/applications', authenticate, authorize('ADMIN'), getPendingApplicationsAdminController);
 router.post('/admin/applications/review', authenticate, authorize('ADMIN'), reviewApplicationAdminController);
+router.put('/admin/orders/:id/status', authenticate, authorize('ADMIN'), updateOrderStatusAdminController);
+router.delete('/admin/promos/:id', authenticate, authorize('ADMIN'), deletePromoCodeAdminController);
+router.get('/admin/stores', authenticate, authorize('ADMIN'), getAllStoresAdminController);
+router.post('/admin/stores/:id/toggle', authenticate, authorize('ADMIN'), toggleStoreStatusAdminController);
+router.get('/admin/support-tickets', authenticate, authorize('ADMIN'), getAllSupportTicketsAdminController);
+router.put('/admin/support-tickets/:id/resolve', authenticate, authorize('ADMIN'), resolveSupportTicketAdminController);
 
 export default router;

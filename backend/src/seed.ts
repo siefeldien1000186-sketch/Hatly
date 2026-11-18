@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { config } from './config';
 
 const prisma = new PrismaClient();
 
@@ -616,6 +617,56 @@ export async function seedDatabase() {
   console.log('🍽️ Restaurant: 01055556666 (pass: hatly123)');
 }
 
+export async function ensureAdminExists() {
+  try {
+    const adminEmail = (config.adminEmail || 'admin@hatly.eg').toLowerCase().trim();
+    const adminPassword = config.adminPassword || 'Admin@Hatly2026Secure!';
+    const adminPhone = (config.adminPhone || '01000000001').trim();
+
+    const existingAdmin = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: adminEmail },
+          { role: 'ADMIN' },
+        ],
+      },
+    });
+
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
+
+    if (!existingAdmin) {
+      console.log(`🔐 Creating initial dedicated Administrator account: ${adminEmail}`);
+      await prisma.user.create({
+        data: {
+          name: 'مدير نظام هاتلي (Super Admin)',
+          phone: adminPhone,
+          email: adminEmail,
+          passwordHash,
+          role: 'ADMIN',
+          language: 'ar',
+          walletBalance: 10000.0,
+          isEmailVerified: true,
+          isPhoneVerified: true,
+        },
+      });
+      console.log(`✅ Dedicated Administrator account ready: ${adminEmail}`);
+    } else {
+      await prisma.user.update({
+        where: { id: existingAdmin.id },
+        data: {
+          role: 'ADMIN',
+          email: adminEmail,
+          passwordHash,
+          isBlocked: false,
+        },
+      });
+      console.log(`✅ Administrator verified & synchronized: ${adminEmail}`);
+    }
+  } catch (err) {
+    console.error('Error ensuring admin exists:', err);
+  }
+}
+
 export async function autoSeedIfEmpty() {
   try {
     const userCount = await prisma.user.count();
@@ -625,6 +676,7 @@ export async function autoSeedIfEmpty() {
     } else {
       console.log(`✅ Database ready: contains ${userCount} users.`);
     }
+    await ensureAdminExists();
   } catch (err) {
     console.warn('Auto-seed check notice:', err);
   }

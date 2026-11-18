@@ -40,7 +40,7 @@ interface ServiceZoneItem {
 export const AdminApp: React.FC = () => {
   const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<
-    'ANALYTICS' | 'APPLICATIONS' | 'ZONES' | 'ORDERS' | 'DRIVERS' | 'PRICING' | 'PROMOS' | 'USERS'
+    'ANALYTICS' | 'APPLICATIONS' | 'ZONES' | 'ORDERS' | 'DRIVERS' | 'PRICING' | 'PROMOS' | 'USERS' | 'STORES' | 'SUPPORT'
   >('ANALYTICS');
 
   const [analytics, setAnalytics] = useState<any>(null);
@@ -55,6 +55,10 @@ export const AdminApp: React.FC = () => {
   const [pendingCaptains, setPendingCaptains] = useState<any[]>([]);
   const [pendingStores, setPendingStores] = useState<any[]>([]);
   const [isLoadingApps, setIsLoadingApps] = useState(false);
+
+  // Stores & Support
+  const [adminStores, setAdminStores] = useState<any[]>([]);
+  const [supportTickets, setSupportTickets] = useState<any[]>([]);
   const [rejectionModal, setRejectionModal] = useState<{
     isOpen: boolean;
     type: 'DRIVER' | 'STORE';
@@ -81,7 +85,7 @@ export const AdminApp: React.FC = () => {
 
   const fetchAdminData = async () => {
     try {
-      const [anaRes, ordRes, drivRes, userRes, priceRes, promoRes, zonesRes, appsRes] = await Promise.all([
+      const [anaRes, ordRes, drivRes, userRes, priceRes, promoRes, zonesRes, appsRes, storesRes, supportRes] = await Promise.all([
         api.getAdminAnalytics(),
         api.getAdminOrders(),
         api.getAdminDrivers(),
@@ -90,6 +94,8 @@ export const AdminApp: React.FC = () => {
         api.getPromoCodes(),
         api.getAdminZones().catch(() => ({ success: false, zones: [] })),
         api.getAdminApplications().catch(() => ({ success: false, pendingApplications: { captains: [], stores: [] } })),
+        api.getAdminStores().catch(() => ({ success: false, stores: [] })),
+        api.getAdminSupportTickets().catch(() => ({ success: false, tickets: [] })),
       ]);
 
       if (anaRes.success) setAnalytics(anaRes.analytics);
@@ -103,6 +109,8 @@ export const AdminApp: React.FC = () => {
         setPendingCaptains(appsRes.pendingApplications.captains || []);
         setPendingStores(appsRes.pendingApplications.stores || []);
       }
+      if (storesRes.success && storesRes.stores) setAdminStores(storesRes.stores);
+      if (supportRes.success && supportRes.tickets) setSupportTickets(supportRes.tickets);
     } catch (err) {
       console.error('Error fetching admin data:', err);
     }
@@ -195,6 +203,64 @@ export const AdminApp: React.FC = () => {
     }
   };
 
+  // Delete Promo Code
+  const handleDeletePromo = async (promoId: string, code: string) => {
+    if (!confirm(`هل أنت متأكد من حذف كود الخصم "${code}"؟`)) return;
+    try {
+      const res = await api.deletePromoCode(promoId);
+      if (res.success) {
+        alert('تم حذف كود الخصم بنجاح');
+        fetchAdminData();
+      }
+    } catch (err: any) {
+      alert(err.message || 'تعذر حذف كود الخصم');
+    }
+  };
+
+  // Toggle Store Status
+  const handleToggleStore = async (storeId: string) => {
+    try {
+      const res = await api.toggleAdminStore(storeId);
+      if (res.success) {
+        setAdminStores((prev) =>
+          prev.map((s) => (s.id === storeId ? { ...s, isOpen: res.store?.isOpen ?? !s.isOpen } : s))
+        );
+      }
+    } catch (err: any) {
+      alert(err.message || 'تعذر تغيير حالة المتجر');
+    }
+  };
+
+  // Resolve Support Ticket
+  const handleResolveTicket = async (ticketId: string) => {
+    if (!confirm('هل تريد وضع علامة "تم الحل" على هذه الشكوى؟')) return;
+    try {
+      const res = await api.resolveAdminSupportTicket(ticketId);
+      if (res.success) {
+        setSupportTickets((prev) =>
+          prev.map((t) => (t.id === ticketId ? { ...t, status: 'RESOLVED' } : t))
+        );
+        alert('تم حل الشكوى بنجاح');
+      }
+    } catch (err: any) {
+      alert(err.message || 'تعذر حل الشكوى');
+    }
+  };
+
+  // Update Order Status
+  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      const res = await api.updateAdminOrderStatus(orderId, status);
+      if (res.success) {
+        setOrders((prev) =>
+          prev.map((o) => (o.id === orderId ? { ...o, status: status as any } : o))
+        );
+      }
+    } catch (err: any) {
+      alert(err.message || 'تعذر تحديث حالة الطلب');
+    }
+  };
+
   const totalPendingApps = pendingCaptains.length + pendingStores.length;
 
   return (
@@ -249,6 +315,8 @@ export const AdminApp: React.FC = () => {
           { key: 'PRICING', labelAr: 'محرك التسعير', icon: Sliders },
           { key: 'PROMOS', labelAr: 'أكواد الخصم والعروض', icon: Tag },
           { key: 'USERS', labelAr: 'المستخدمين والعملاء', icon: Users },
+          { key: 'STORES', labelAr: 'المتاجر والمطاعم', icon: StoreIcon },
+          { key: 'SUPPORT', labelAr: 'تذاكر الدعم والشكاوى', icon: FileText },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.key;
@@ -813,9 +881,18 @@ export const AdminApp: React.FC = () => {
                   <span className="font-black text-lg text-red-950 tracking-wider font-mono">
                     {p.code}
                   </span>
-                  <span className="text-xs bg-red-100 text-[#E70209] font-black px-2 py-0.5 rounded-full">
-                    خصم {p.discountPercent}%
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs bg-red-100 text-[#E70209] font-black px-2 py-0.5 rounded-full">
+                      خصم {p.discountPercent}%
+                    </span>
+                    <button
+                      onClick={() => handleDeletePromo(p.id, p.code)}
+                      className="p-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition"
+                      title="حذف الكود"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
                 <div className="text-xs text-gray-600 space-y-1">
                   <p>أقصى قيمة للخصم: {p.maxDiscount} ج.م</p>
@@ -863,6 +940,137 @@ export const AdminApp: React.FC = () => {
                       >
                         {u.isBlocked ? 'فك الحظر' : 'حظر الحساب'}
                       </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: STORES */}
+      {activeTab === 'STORES' && (
+        <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+            <div>
+              <h3 className="font-black text-gray-900 text-base">المتاجر والمطاعم المسجّلة</h3>
+              <p className="text-xs text-gray-500 mt-0.5">إجمالي {adminStores.length} متجر/مطعم في المنصة</p>
+            </div>
+            <button onClick={fetchAdminData} className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition">
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-gray-50 text-gray-500 font-bold">
+                <tr>
+                  <th className="p-3 text-right">اسم المتجر</th>
+                  <th className="p-3 text-right">النوع</th>
+                  <th className="p-3 text-right">الموبايل</th>
+                  <th className="p-3 text-right">الحالة</th>
+                  <th className="p-3 text-right">التحقق</th>
+                  <th className="p-3 text-right">إجراء</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {adminStores.length === 0 ? (
+                  <tr><td colSpan={6} className="p-8 text-center text-gray-400 font-bold">لا توجد متاجر مسجلة بعد</td></tr>
+                ) : adminStores.map((store: any) => (
+                  <tr key={store.id} className="hover:bg-gray-50 transition">
+                    <td className="p-3 font-bold text-gray-900">{store.nameAr || store.nameEn || '—'}</td>
+                    <td className="p-3 text-gray-600">{store.category || '—'}</td>
+                    <td className="p-3 text-gray-600 font-mono">{store.phone || '—'}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-lg font-bold ${store.isOpen ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'}`}>
+                        {store.isOpen ? 'مفتوح' : 'مغلق'}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-lg font-bold text-[10px] ${
+                        store.verificationStatus === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                        store.verificationStatus === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {store.verificationStatus === 'APPROVED' ? 'موثّق' : store.verificationStatus === 'PENDING' ? 'قيد المراجعة' : store.verificationStatus || '—'}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <button
+                        onClick={() => handleToggleStore(store.id)}
+                        className={`px-3 py-1 rounded-lg text-[11px] font-bold transition ${store.isOpen ? 'bg-orange-100 text-orange-800 hover:bg-orange-200' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}`}
+                      >
+                        {store.isOpen ? 'إغلاق' : 'فتح'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: SUPPORT TICKETS */}
+      {activeTab === 'SUPPORT' && (
+        <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+            <div>
+              <h3 className="font-black text-gray-900 text-base">تذاكر الدعم والشكاوى</h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {supportTickets.filter((t: any) => t.status !== 'RESOLVED').length} شكوى مفتوحة من أصل {supportTickets.length}
+              </p>
+            </div>
+            <button onClick={fetchAdminData} className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition">
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-gray-50 text-gray-500 font-bold">
+                <tr>
+                  <th className="p-3 text-right">المستخدم</th>
+                  <th className="p-3 text-right">النوع</th>
+                  <th className="p-3 text-right">الرسالة</th>
+                  <th className="p-3 text-right">الحالة</th>
+                  <th className="p-3 text-right">التاريخ</th>
+                  <th className="p-3 text-right">إجراء</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {supportTickets.length === 0 ? (
+                  <tr><td colSpan={6} className="p-8 text-center text-gray-400 font-bold">لا توجد شكاوى مسجلة</td></tr>
+                ) : supportTickets.map((ticket: any) => (
+                  <tr key={ticket.id} className="hover:bg-gray-50 transition">
+                    <td className="p-3 font-bold text-gray-900">{ticket.user?.name || ticket.user?.phone || '—'}</td>
+                    <td className="p-3 text-gray-600">{ticket.type || '—'}</td>
+                    <td className="p-3 text-gray-600 max-w-[200px] truncate">{ticket.message || '—'}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-lg font-bold text-[10px] ${
+                        ticket.status === 'RESOLVED' ? 'bg-green-100 text-green-700' :
+                        ticket.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' :
+                        'bg-amber-100 text-amber-700'
+                      }`}>
+                        {ticket.status === 'RESOLVED' ? 'تم الحل' : ticket.status === 'IN_PROGRESS' ? 'جاري المعالجة' : 'مفتوح'}
+                      </span>
+                    </td>
+                    <td className="p-3 text-gray-500">
+                      {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString('ar-EG') : '—'}
+                    </td>
+                    <td className="p-3">
+                      {ticket.status !== 'RESOLVED' ? (
+                        <button
+                          onClick={() => handleResolveTicket(ticket.id)}
+                          className="px-3 py-1 rounded-lg text-[11px] font-bold bg-green-100 text-green-800 hover:bg-green-200 transition flex items-center gap-1"
+                        >
+                          <Check className="w-3 h-3" />
+                          تم الحل
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 text-[11px] font-bold flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3 text-green-500" /> محلول
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

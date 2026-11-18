@@ -25,7 +25,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenWalletModal }) => {
   const { language, toggleLanguage, t } = useLanguage();
-  const { user, activeRole, setActiveRole, quickLogin, logout } = useAuth();
+  const { user, activeRole, setActiveRole, logout } = useAuth();
   const [showRoleMenu, setShowRoleMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
@@ -65,7 +65,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenWalletModal }) => {
                     key={item.role}
                     onClick={() => {
                       setActiveRole(item.role);
-                      quickLogin(item.role);
                     }}
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md transition font-medium text-xs whitespace-nowrap ${
                       isActive
@@ -181,66 +180,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenWalletModal }) => {
                     <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-bold">+٥٠ ج.م</span>
                   </button>
                 </div>
-
-                <div className="px-3 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                  {language === 'ar' ? 'أو دخول سريع لحسابات العرض (Demo):' : 'Or Switch Demo Role:'}
-                </div>
-
-                <button
-                  onClick={() => {
-                    quickLogin('CUSTOMER');
-                    setShowRoleMenu(false);
-                  }}
-                  className="w-full px-4 py-2 text-start flex items-center justify-between text-xs hover:bg-red-50 hover:text-[#E70209] transition"
-                >
-                  <div className="flex items-center gap-2">
-                    <Smartphone className="w-4 h-4 text-emerald-500" />
-                    <span>{language === 'ar' ? 'أحمد (عميل كاش ومحفظة)' : 'Customer (Ahmed)'}</span>
-                  </div>
-                  {activeRole === 'CUSTOMER' && <span className="text-[10px] bg-red-100 text-[#E70209] px-1.5 py-0.5 rounded">نشط</span>}
-                </button>
-
-                <button
-                  onClick={() => {
-                    quickLogin('DRIVER');
-                    setShowRoleMenu(false);
-                  }}
-                  className="w-full px-4 py-2 text-start flex items-center justify-between text-xs hover:bg-red-50 hover:text-[#E70209] transition"
-                >
-                  <div className="flex items-center gap-2">
-                    <Car className="w-4 h-4 text-amber-500" />
-                    <span>{language === 'ar' ? 'محمود (كابتن إلنترا 2023)' : 'Driver (Mahmoud)'}</span>
-                  </div>
-                  {activeRole === 'DRIVER' && <span className="text-[10px] bg-red-100 text-[#E70209] px-1.5 py-0.5 rounded">نشط</span>}
-                </button>
-
-                <button
-                  onClick={() => {
-                    quickLogin('STORE_OWNER');
-                    setShowRoleMenu(false);
-                  }}
-                  className="w-full px-4 py-2 text-start flex items-center justify-between text-xs hover:bg-red-50 hover:text-[#E70209] transition"
-                >
-                  <div className="flex items-center gap-2">
-                    <Store className="w-4 h-4 text-blue-500" />
-                    <span>{language === 'ar' ? 'كشري أبو طارق (مطعم)' : 'Store (Abou Tarek)'}</span>
-                  </div>
-                  {activeRole === 'STORE_OWNER' && <span className="text-[10px] bg-red-100 text-[#E70209] px-1.5 py-0.5 rounded">نشط</span>}
-                </button>
-
-                <button
-                  onClick={() => {
-                    quickLogin('ADMIN');
-                    setShowRoleMenu(false);
-                  }}
-                  className="w-full px-4 py-2 text-start flex items-center justify-between text-xs hover:bg-red-50 hover:text-[#E70209] transition"
-                >
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-purple-500" />
-                    <span>{language === 'ar' ? 'إدارة هاتلي المركزية' : 'Admin (Command Center)'}</span>
-                  </div>
-                  {activeRole === 'ADMIN' && <span className="text-[10px] bg-red-100 text-[#E70209] px-1.5 py-0.5 rounded">نشط</span>}
-                </button>
 
                 <div className="border-t border-gray-100 mt-2 pt-1">
                   <button

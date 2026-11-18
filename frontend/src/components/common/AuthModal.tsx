@@ -35,7 +35,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   defaultTab = 'LOGIN',
   defaultRole = 'CUSTOMER',
 }) => {
-  const { login, register, forgotPassword, resetPassword, quickLogin } = useAuth();
+  const { login, register, forgotPassword, resetPassword } = useAuth();
   const { language } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<'LOGIN' | 'REGISTER' | 'FORGOT'>(defaultTab);

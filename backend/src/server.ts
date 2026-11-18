@@ -1,6 +1,7 @@
 import http from 'http';
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import routes from './routes';
 import { initSocket } from './services/socket.service';
@@ -37,6 +38,27 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting — 10 login attempts per 15 minutes per IP
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'تجاوزت الحد المسموح به من محاولات تسجيل الدخول. حاول مجدداً بعد 15 دقيقة.' },
+  skipSuccessfulRequests: false,
+});
+app.use('/api/v1/auth/login', loginLimiter);
+
+// General API rate limit — 200 req per minute per IP
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'طلبات كثيرة جداً. حاول مجدداً بعد قليل.' },
+});
+app.use('/api/v1', generalLimiter);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

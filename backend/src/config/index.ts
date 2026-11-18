@@ -13,4 +13,7 @@ export const config = {
   smsProvider: process.env.SMS_PROVIDER || 'SANDBOX',
   mockOtpCode: process.env.MOCK_OTP_CODE || '1234',
   paymentProvider: process.env.PAYMENT_GATEWAY_PROVIDER || 'SANDBOX',
+  adminEmail: process.env.ADMIN_EMAIL || 'admin@hatly.eg',
+  adminPassword: process.env.ADMIN_PASSWORD || 'Admin@Hatly2026Secure!',
+  adminPhone: process.env.ADMIN_PHONE || '01000000001',
 };

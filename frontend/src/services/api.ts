@@ -151,4 +151,12 @@ export const api = {
   getAdminApplications: () => apiRequest('/admin/applications'),
   reviewAdminApplication: (payload: { type: string; id: string; status: string; rejectionReason?: string }) =>
     apiRequest('/admin/applications/review', { method: 'POST', body: JSON.stringify(payload) }),
+  updateAdminOrderStatus: (id: string, status: string, cancellationReason?: string) =>
+    apiRequest(`/admin/orders/${id}/status`, { method: 'PUT', body: JSON.stringify({ status, cancellationReason }) }),
+  deletePromoCode: (id: string) => apiRequest(`/admin/promos/${id}`, { method: 'DELETE' }),
+  getAdminStores: () => apiRequest('/admin/stores'),
+  toggleAdminStore: (id: string) => apiRequest(`/admin/stores/${id}/toggle`, { method: 'POST' }),
+  getAdminSupportTickets: () => apiRequest('/admin/support-tickets'),
+  resolveAdminSupportTicket: (id: string, status?: string, adminNotes?: string) =>
+    apiRequest(`/admin/support-tickets/${id}/resolve`, { method: 'PUT', body: JSON.stringify({ status, adminNotes }) }),
 };
