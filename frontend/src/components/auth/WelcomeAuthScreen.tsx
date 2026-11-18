@@ -414,30 +414,6 @@ export const WelcomeAuthScreen: React.FC = () => {
                 <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-bold">+٥٠ ج.م</span>
               </button>
             </div>
-
-            {/* Quick Demo Preview Shortcut */}
-            <div className="pt-4 border-t border-gray-100">
-              <p className="text-xs font-bold text-gray-400 mb-2.5">
-                {language === 'ar' ? 'أو تجربة فورية بحسابات العرض (Demo):' : 'Instant Demo Login:'}
-              </p>
-              <div className="grid grid-cols-4 gap-2">
-                {[
-                  { role: 'CUSTOMER' as Role, label: 'عميل' },
-                  { role: 'DRIVER' as Role, label: 'كابتن' },
-                  { role: 'STORE_OWNER' as Role, label: 'مطعم' },
-                  { role: 'ADMIN' as Role, label: 'إدارة' },
-                ].map((d) => (
-                  <button
-                    key={d.role}
-                    type="button"
-                    onClick={() => quickLogin(d.role)}
-                    className="py-2 bg-gray-50 hover:bg-red-50 hover:text-[#E70209] border border-gray-200 rounded-xl text-xs font-bold transition"
-                  >
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         )}
 

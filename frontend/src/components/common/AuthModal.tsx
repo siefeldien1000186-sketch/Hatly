@@ -388,32 +388,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <span>{isLoading ? (language === 'ar' ? 'جاري الدخول...' : 'Signing in...') : (language === 'ar' ? 'دخول لحسابي' : 'Sign In')}</span>
               </button>
 
-              {/* Quick Demo Accounts */}
-              <div className="pt-2 border-t border-gray-100">
-                <p className="text-[11px] font-bold text-gray-400 mb-2 text-center">
-                  {language === 'ar' ? 'أو تجربة سريعة بدون كتابة:' : 'Or quick demo login:'}
-                </p>
-                <div className="grid grid-cols-4 gap-1.5 text-center">
-                  {[
-                    { role: 'CUSTOMER' as Role, label: 'عميل' },
-                    { role: 'DRIVER' as Role, label: 'كابتن' },
-                    { role: 'STORE_OWNER' as Role, label: 'متجر' },
-                    { role: 'ADMIN' as Role, label: 'إدارة' },
-                  ].map((d) => (
-                    <button
-                      key={d.role}
-                      type="button"
-                      onClick={async () => {
-                        await quickLogin(d.role);
-                        onClose();
-                      }}
-                      className="py-1.5 px-2 bg-gray-50 hover:bg-red-50 hover:text-[#E70209] border border-gray-200 rounded-xl text-[11px] font-bold transition"
-                    >
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </form>
           )}
 
