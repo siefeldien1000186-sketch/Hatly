@@ -1,21 +1,33 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
+
+RUN apk add --no-cache openssl
+
 COPY package*.json ./
 COPY prisma ./prisma/
 RUN npm install
+
 COPY . .
 RUN npx prisma generate
-RUN npm run build || true
+RUN npm run build
 
 FROM node:20-alpine AS runner
+
 WORKDIR /app
+
+RUN apk add --no-cache openssl
+
 COPY package*.json ./
-RUN npm install --omit=dev
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/tsconfig.json ./
+COPY prisma ./prisma/
+RUN npm install --omit=dev --ignore-scripts
+RUN npx prisma generate
+
+COPY --from=builder /app/dist ./dist
+
+ENV NODE_ENV=production
+ENV PORT=5000
 
 EXPOSE 5000
-CMD ["npx", "tsx", "src/server.ts"]
+
+CMD ["sh", "-c", "npx prisma db push && node dist/server.js"]

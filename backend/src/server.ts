@@ -5,6 +5,7 @@ import { config } from './config';
 import routes from './routes';
 import { initSocket } from './services/socket.service';
 import { errorHandler } from './middlewares/error.middleware';
+import { autoSeedIfEmpty } from './seed';
 
 const app = express();
 const server = http.createServer(app);
@@ -13,7 +14,27 @@ const server = http.createServer(app);
 const io = initSocket(server);
 
 // Standard Middlewares
-app.use(cors({ origin: config.corsOrigin, credentials: true }));
+const allowedOrigins = [
+  'https://hatly-frontend-production.up.railway.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      config.corsOrigin === '*' ||
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.up.railway.app') ||
+      origin.endsWith('.vercel.app')
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -42,6 +63,9 @@ server.listen(config.port, '0.0.0.0', () => {
   console.log(`⚡ WebSocket Server active on port ${config.port}`);
   console.log(`🇪🇬 Target Market: Egypt | Currency: EGP | Mode: ${config.nodeEnv}`);
   console.log('====================================================');
+
+  // Ensure default seed data exists if database is newly initialized
+  autoSeedIfEmpty().catch((err) => console.error('Auto-seed error:', err));
 });
 
 export default app;

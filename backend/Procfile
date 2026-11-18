@@ -1,1 +1,1 @@
-web: npm run build && npx prisma db push && npm run start
+web: npx prisma db push && npx tsx prisma/auto-seed.ts && node dist/server.js
