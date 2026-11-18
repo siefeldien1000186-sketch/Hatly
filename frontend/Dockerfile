@@ -6,6 +6,14 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+# Production Environment variables for Vite build
+ENV VITE_API_URL=https://hatly-backend-production.up.railway.app/api/v1
+ENV VITE_SOCKET_URL=https://hatly-backend-production.up.railway.app
+ENV VITE_DEFAULT_COUNTRY=Egypt
+ENV VITE_DEFAULT_CURRENCY=EGP
+ENV VITE_DEFAULT_LANGUAGE=ar
+
 RUN npm run build
 
 FROM nginx:alpine
