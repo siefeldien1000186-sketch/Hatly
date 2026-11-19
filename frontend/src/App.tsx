@@ -61,10 +61,10 @@ const MainContent: React.FC = () => {
 
       {/* Main Role App Surface */}
       <main className="flex-1">
-        {user.role === 'CUSTOMER' && <CustomerApp />}
-        {user.role === 'DRIVER' && <DriverApp />}
-        {user.role === 'STORE_OWNER' && <StoreApp />}
-        {user.role === 'ADMIN' && <AdminApp />}
+        {(user.role === 'CUSTOMER' || (user.role === 'ADMIN' && activeRole === 'CUSTOMER')) && <CustomerApp />}
+        {(user.role === 'DRIVER' || (user.role === 'ADMIN' && activeRole === 'DRIVER')) && <DriverApp />}
+        {(user.role === 'STORE_OWNER' || (user.role === 'ADMIN' && activeRole === 'STORE_OWNER')) && <StoreApp />}
+        {(user.role === 'ADMIN' && (activeRole === 'ADMIN' || !activeRole)) && <AdminApp />}
       </main>
 
       {/* Global Wallet Modal */}

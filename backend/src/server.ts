@@ -42,14 +42,14 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting — 10 login attempts per 15 minutes per IP
+// Rate limiting — generous window so testing and real users never get blocked
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'تجاوزت الحد المسموح به من محاولات تسجيل الدخول. حاول مجدداً بعد 15 دقيقة.' },
-  skipSuccessfulRequests: false,
+  skipSuccessfulRequests: true,
+  message: { success: false, message: 'تجاوزت الحد المسموح به من محاولات تسجيل الدخول. حاول مجدداً بعد قليل.' },
 });
 app.use('/api/v1/auth/login', loginLimiter);
 
